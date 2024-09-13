@@ -12,7 +12,7 @@ be lost if SCREAM_HACK_XML is not enabled.
 -->
 
 <namelist_defaults>
-
+<!-- woohooo -->
   <!--
     The following block defines convenience selectors. Case settings
     can be used as selectors, but they are often not covenient due to
