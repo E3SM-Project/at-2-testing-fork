@@ -9,7 +9,6 @@ on:
 
 jobs:
   hello-mappy:
-    if: ${{ github.event.repository.name == 'scream' }}
     runs-on: [self-hosted, mappy]
 
     steps:
