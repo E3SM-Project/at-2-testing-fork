@@ -1,0 +1,128 @@
+name: EAMxx standalone testing
+description: runs EAMxx standalone testing with required configuration
+
+inputs:
+  build_type:
+    description: 'Build type to run'
+    required: true
+    # type: string
+    # options: [sp, dbg, fpe, opt, cov, valg, csm, css, csr, csi]
+  # compiler:
+  #   description: 'Compiler to use'
+  #   required: true
+  #   type: string
+  #   options: [gcc, intel, cuda]
+  device:
+    description: 'Kokkos device to use'
+    required: true
+    # type: string
+    # options: [serial, openmp, cuda]
+  run-type:
+    description: 'Type of test-all-scream run'
+    required: true
+    # type: string
+    # options: [nightly, at-run, bless]
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate inputs
+      run: |
+        VALID_BUILD_TYPES="sp dbg fpe opt cov valg csm css csr csi"
+        VALID_COMPILERS="gcc intel cuda"
+        VALID_DEVICES="serial openmp cuda"
+        VALID_RUN_TYPES="nightly at-run bless"
+
+        if ! [[ " $VALID_BUILD_TYPES " =~ " ${{ inputs.build_type }} " ]]; then
+          echo "Invalid build_type: ${{ inputs.build_type }}"
+          echo "Valid choices: $VALID_BUILD_TYPES"
+          exit 1
+        fi
+
+        if ! [[ " $VALID_COMPILERS " =~ " ${{ inputs.compiler }} " ]]; then
+          echo "Invalid compiler: ${{ inputs.compiler }}"
+          echo "Valid choices: $VALID_COMPILERS"
+          exit 1
+        fi
+
+        if ! [[ " $VALID_DEVICES " =~ " ${{ inputs.device }} " ]]; then
+          echo "Invalid device: ${{ inputs.device }}"
+          echo "Valid choices: $VALID_DEVICES"
+          exit 1
+        fi
+
+        if ! [[ " $VALID_RUN_TYPES " =~ " ${{ inputs.run_type }} " ]]; then
+          echo "Invalid run_type: ${{ inputs.run_type }}"
+          echo "Valid choices: $VALID_RUN_TYPES"
+          exit 1
+        fi
+    - name: Check repo presence
+      run: |
+        if [ ! -d ".git" ]; then
+          echo "Repository is not checked out. Please ensure the repository is checked out before running this action."
+          exit 1
+        fi
+    - name: Set long-name based on build_type
+      id: set-long-name
+      run: |
+        case "${{ inputs.build_type }}" in
+          sp)
+            echo "long-name=full_sp_debug" >> $GITHUB_ENV
+            ;;
+          dbg)
+            echo "long-name=full_debug" >> $GITHUB_ENV
+            ;;
+          fpe)
+            echo "long-name=debug_nopack_fpe" >> $GITHUB_ENV
+            ;;
+          opt)
+            echo "long-name=release" >> $GITHUB_ENV
+            ;;
+          cov)
+            echo "long-name=coverage" >> $GITHUB_ENV
+            ;;
+          valg)
+            echo "long-name=valgrind" >> $GITHUB_ENV
+            ;;
+          csm)
+            echo "long-name=compute_sanitizer_memcheck" >> $GITHUB_ENV
+            ;;
+          css)
+            echo "long-name=compute_sanitizer_synccheck" >> $GITHUB_ENV
+            ;;
+          csr)
+            echo "long-name=compute_sanitizer_racecheck" >> $GITHUB_ENV
+            ;;
+          csi)
+            echo "long-name=compute_sanitizer_initcheck" >> $GITHUB_ENV
+            ;;
+          *)
+            echo "Invalid build_type: ${{ inputs.build_type }}"
+            exit 1
+            ;;
+        esac
+    - name: Print build specs
+      run: |
+        echo "Testing EAMxx standalone, for the following configuration:"
+        echo "  testing type: ${{ inputs.run-type }}"
+        echo "  build type  : ${{ inputs.build_type }}"
+        echo "  compiler    : ${{ inputs.compiler }}"
+        echo "  device      : ${{ inputs.device }}"
+    - name: Run test-all-scream
+      run: |
+        cd components/eamxx
+        if [ "${{ inputs.run-type }}" = "nightly" ]; then
+          ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
+        elif [ "${{ inputs.run-type }}" = "generate" ]; then 
+          ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
+        else
+          ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+        fi
+    - name: Upload ctest logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: log-files-${{ inputs.build_type }}
+        path: components/eamxx/ctest-build/${{ env.long-name }}/Testing/Temporary/Last*.log
+      env:
+        NODE_EXTRA_CA_CERTS: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
