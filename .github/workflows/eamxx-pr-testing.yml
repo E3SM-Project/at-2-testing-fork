@@ -36,7 +36,7 @@ jobs:
           show-progress: false
           submodules: recursive
       - name: Run tests
-        uses: ./github/workflows/test-all-scream.yml
+        uses: ./github/workflows/eamxx-test-all-scream.yml
         with:
           build_type: ${{ matrix.build_type }}
           compiler: gcc
