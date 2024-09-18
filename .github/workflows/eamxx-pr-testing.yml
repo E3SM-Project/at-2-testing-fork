@@ -29,6 +29,12 @@ jobs:
             console.log(`The job was triggered by a ${eventName} event.`);
             console.log(`  - Event action: ${eventAction}`);
             console.log(`  - Triggered by: ${actor}`);
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
       - name: Run tests
         uses: ./github/workflows/test-all-scream.yml
         with:

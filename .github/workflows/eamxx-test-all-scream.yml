@@ -69,12 +69,6 @@ jobs:
               exit 1
               ;;
           esac
-      - name: Check out the repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          show-progress: false
-          submodules: recursive
       - name: Print build specs
         run: |
           echo "Testing EAMxx standalone, for the following configuration:"
