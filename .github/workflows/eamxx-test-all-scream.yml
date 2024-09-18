@@ -27,7 +27,6 @@ on:
 
 jobs:
   test-all-scream:
-    runs-on: [self-hosted, ${{ inputs.compiler }}, ${{ inputs.device }}]
     steps:
       - name: Set long-name based on build_type
         id: set-long-name
