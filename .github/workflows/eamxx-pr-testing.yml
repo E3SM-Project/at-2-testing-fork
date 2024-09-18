@@ -14,6 +14,7 @@ jobs:
   test-all-scream:
     runs-on: [self-hosted, openmp, gcc]
     strategy:
+      fail-fast: false
       matrix:
         build_type: [sp, dbg, fpe, opt]
         device: [openmp]
