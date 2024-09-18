@@ -97,15 +97,15 @@ MACHINE_METADATA = {
     "ghci-serial" : ([],
                      ["mpicxx","mpifort","mpicc"],
                       "",
-                      "/projects/e3sm/baselines"),
+                    "/projects/e3sm/baselines/scream/master-baselines"),
     "ghci-openmp" : ([],
                      ["mpicxx","mpifort","mpicc"],
                       "",
-                      "/projects/e3sm/baselines"),
+                    "/projects/e3sm/baselines/scream/master-baselines"),
     "ghci-cuda" : ([],
                    ["mpicxx","mpifort","mpicc"],
                     "",
-                    "/projects/e3sm/baselines"),
+                    "/projects/e3sm/baselines/scream/master-baselines"),
 }
 
 if pathlib.Path("~/.cime/scream_mach_specs.py").expanduser().is_file(): # pylint: disable=no-member
