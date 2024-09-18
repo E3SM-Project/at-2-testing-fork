@@ -4,7 +4,7 @@ on:
   # Runs if another workflow calls it
   workflow_call:
     inputs:
-      build-type:
+      build_type:
         description: 'Build type to run'
         required: true
         type: string
@@ -27,13 +27,13 @@ on:
 
 jobs:
   test-all-scream:
-    name: ${{ inputs.compiler }}-${{ inputs.device }}-${{ inputs.build-type }}
+    name: ${{ inputs.compiler }}-${{ inputs.device }}-${{ inputs.build_type }}
     runs-on: [self-hosted, ${{ inputs.compiler }}, ${{ inputs.device }}]
     steps:
-      - name: Set long-name based on build-type
+      - name: Set long-name based on build_type
         id: set-long-name
         run: |
-          case "${{ inputs.build-type }}" in
+          case "${{ inputs.build_type }}" in
             sp)
               echo "long-name=full_sp_debug" >> $GITHUB_ENV
               ;;
@@ -65,7 +65,7 @@ jobs:
               echo "long-name=compute_sanitizer_initcheck" >> $GITHUB_ENV
               ;;
             *)
-              echo "Invalid build-type: ${{ inputs.build-type }}"
+              echo "Invalid build_type: ${{ inputs.build_type }}"
               exit 1
               ;;
           esac
@@ -79,24 +79,24 @@ jobs:
         run: |
           echo "Testing EAMxx standalone, for the following configuration:"
           echo "  testing type: ${{ inputs.run-type }}"
-          echo "  build type  : ${{ inputs.build-type }}"
+          echo "  build type  : ${{ inputs.build_type }}"
           echo "  compiler    : ${{ inputs.compiler }}"
           echo "  device      : ${{ inputs.device }}"
       - name: Run test-all-scream
         run: |
           cd components/eamxx
           if [ "${{ inputs.run-type }}" = "nightly" ]; then
-            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build-type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
+            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
           elif [ "${{ inputs.run-type }}" = "generate" ]; then 
-            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build-type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
+            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
           else
-            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build-type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
           fi
       - name: Upload ctest logs
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: log-files-${{matrix.build-type.short-name}}
+          name: log-files-${{ inputs.build_type }}
           path: components/eamxx/ctest-build/${{ env.long-name }}/Testing/Temporary/Last*.log
         env:
           NODE_EXTRA_CA_CERTS: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem

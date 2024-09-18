@@ -13,11 +13,11 @@ concurrency:
 
 jobs:
   test-all-scream:
-    name: ${{ matrix.build-type.long-name }}
+    name: ${{ matrix.build_type.long-name }}
     runs-on: [self-hosted, openmp, gcc12]
     strategy:
       matrix:
-        build-type: [sp, dbg, fpe, opt]
+        build_type: [sp, dbg, fpe, opt]
     steps:
       - name: Show action trigger
         uses: actions/github-script@v6
@@ -32,7 +32,7 @@ jobs:
       - name: Run tests
         uses: ./github/workflows/test-all-scream.yml
         with:
-          build-type: ${{ matrix.build-type }}
+          build_type: ${{ matrix.build_type }}
           compiler: gcc
           device: openmp
           run-type: at-run
