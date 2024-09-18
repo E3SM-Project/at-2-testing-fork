@@ -1,4 +1,4 @@
-name: Pull request automatic testing for standalone EAMxx
+name: PR Autotesting
 
 on:
   # Runs every time a PR is open against master
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   test-all-scream:
-    name: ${{ matrix.build_type.long-name }}
+    name: gcc-openmp-${{ matrix.build_type }}
     runs-on: [self-hosted, openmp, gcc12]
     strategy:
       matrix:
