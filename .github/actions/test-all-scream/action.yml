@@ -23,18 +23,21 @@ runs:
           echo "Valid choices: $VALID_RUN_TYPES"
           exit 1
         fi
+      shell: bash
     - name: Check repo presence
       run: |
         if [ ! -d ".git" ]; then
           echo "Repository is not checked out. Please ensure the repository is checked out before running this action."
           exit 1
         fi
+      shell: bash
     - name: Print build specs
       run: |
         echo "Testing EAMxx standalone, for the following configuration:"
         echo "  testing type: ${{ inputs.run_type }}"
         echo "  build type  : ${{ inputs.build_type }}"
         echo "  machine     : ${{ inputs.machine }}"
+      shell: bash
     - name: Run test-all-scream
       run: |
         cd components/eamxx
@@ -45,6 +48,7 @@ runs:
         else
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
         fi
+      shell: bash
     - name: Upload ctest logs
       if: always()
       uses: actions/upload-artifact@v3
