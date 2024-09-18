@@ -1,0 +1,38 @@
+name: Pull request automatic testing for standalone EAMxx
+
+on:
+  # Runs every time a PR is open against master
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, ready_for_review, reopened]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  test-all-scream:
+    name: ${{ matrix.build-type.long-name }}
+    runs-on: [self-hosted, openmp, gcc12]
+    strategy:
+      matrix:
+        build-type: [sp, dbg, fpe, opt]
+    steps:
+      - name: Show action trigger
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const eventName = context.eventName;
+            const eventAction = context.payload.action || 'N/A';
+            const actor = context.actor;
+            console.log(`The job was triggered by a ${eventName} event.`);
+            console.log(`  - Event action: ${eventAction}`);
+            console.log(`  - Triggered by: ${actor}`);
+      - name: Run tests
+        uses: ./github/workflows/test-all-scream.yml
+        with:
+          build-type: ${{ matrix.build-type }}
+          compiler: gcc
+          device: openmp
+          run-type: at-run
