@@ -1,0 +1,96 @@
+name: Common workflow for standalone EAMxx testing
+
+on:
+  # Runs if another workflow calls it
+  workflow_call:
+    inputs:
+      build_type:
+        description: 'Build type to run'
+        required: true
+        type: string
+        options: [sp, dbg, fpe, opt, cov, valg, csm, css, csr, csi]
+      compiler:
+        description: 'Compiler to use'
+        required: true
+        type: string
+        options: [gcc, intel, cuda]
+      device:
+        description: 'Kokkos device to use'
+        required: true
+        type: string
+        options: [serial, openmp, cuda]
+      run-type:
+        description: 'Type of test-all-scream run'
+        required: true
+        type: string
+        options: [nightly, at-run, bless]
+
+jobs:
+  test-all-scream:
+    name: ${{ inputs.compiler }}-${{ inputs.device }}-${{ inputs.build_type }}
+    runs-on: [self-hosted, ${{ inputs.compiler }}, ${{ inputs.device }}]
+    steps:
+      - name: Set long-name based on build_type
+        id: set-long-name
+        run: |
+          case "${{ inputs.build_type }}" in
+            sp)
+              echo "long-name=full_sp_debug" >> $GITHUB_ENV
+              ;;
+            dbg)
+              echo "long-name=full_debug" >> $GITHUB_ENV
+              ;;
+            fpe)
+              echo "long-name=debug_nopack_fpe" >> $GITHUB_ENV
+              ;;
+            opt)
+              echo "long-name=release" >> $GITHUB_ENV
+              ;;
+            cov)
+              echo "long-name=coverage" >> $GITHUB_ENV
+              ;;
+            valg)
+              echo "long-name=valgrind" >> $GITHUB_ENV
+              ;;
+            csm)
+              echo "long-name=compute_sanitizer_memcheck" >> $GITHUB_ENV
+              ;;
+            css)
+              echo "long-name=compute_sanitizer_synccheck" >> $GITHUB_ENV
+              ;;
+            csr)
+              echo "long-name=compute_sanitizer_racecheck" >> $GITHUB_ENV
+              ;;
+            csi)
+              echo "long-name=compute_sanitizer_initcheck" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "Invalid build_type: ${{ inputs.build_type }}"
+              exit 1
+              ;;
+          esac
+      - name: Print build specs
+        run: |
+          echo "Testing EAMxx standalone, for the following configuration:"
+          echo "  testing type: ${{ inputs.run-type }}"
+          echo "  build type  : ${{ inputs.build_type }}"
+          echo "  compiler    : ${{ inputs.compiler }}"
+          echo "  device      : ${{ inputs.device }}"
+      - name: Run test-all-scream
+        run: |
+          cd components/eamxx
+          if [ "${{ inputs.run-type }}" = "nightly" ]; then
+            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
+          elif [ "${{ inputs.run-type }}" = "generate" ]; then 
+            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
+          else
+            ./scripts/test-all-scream -m ghci-${{ inputs.device }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+          fi
+      - name: Upload ctest logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: log-files-${{ inputs.build_type }}
+          path: components/eamxx/ctest-build/${{ env.long-name }}/Testing/Temporary/Last*.log
+        env:
+          NODE_EXTRA_CA_CERTS: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
