@@ -1,0 +1,75 @@
+name: compiler=gcc-12.3, device=OpenMP
+
+on:
+  # Runs every time a PR is open against master
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, ready_for_review, reopened]
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type to run (use "all" to run all build types)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - sp
+          - dbg
+          - fpe
+          - opt
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  test-all-scream:
+    name: ${{ matrix.build-type.long-name }}
+    runs-on: [self-hosted, mappy]
+    strategy:
+      matrix:
+        build-type:
+          - short-name: sp
+            long-name: full_sp_debug
+          - short-name: dbg
+            long-name: full_debug
+          - short-name: fpe
+            long-name: debug_nopack_fpe
+          - short-name: opt
+            long-name: release
+    steps:
+      - name: Show action trigger
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const eventName = context.eventName;
+            const eventAction = context.payload.action || 'N/A';
+            const actor = context.actor;
+            console.log(`The job was triggered by a ${eventName} event.`);
+            console.log(`  - Event action: ${eventAction}`);
+            console.log(`  - Triggered by: ${actor}`);
+      - name: Check if job should run
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.build_type }}" != "all" ] && [ "${{ github.event.inputs.build_type }}" != "${{ matrix.build-type.short-name }}" ]; then
+            echo "Skipping job for build type ${{ matrix.build-type.short-name }}, since workflow_dispatch requested ${{ github.event.inputs.build_type }}"
+            exit 0
+          fi
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Run test-all-scream
+        run: |
+          cd components/eamxx
+          ./scripts/test-all-scream -m ghci-openmp -t ${{matrix.build-type.short-name}}
+      - name: Upload ctest logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: log-files-${{matrix.build-type.short-name}}
+          path: components/eamxx/ctest-build/${{matrix.build-type.long-name}}/Testing/Temporary/Last*.log
+        env:
+          NODE_EXTRA_CA_CERTS: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
