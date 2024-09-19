@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
     runs-on:  [self-hosted, openmp, gcc]
     strategy:
       fail-fast: false
