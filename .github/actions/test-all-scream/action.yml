@@ -1,5 +1,16 @@
 name: EAMxx standalone testing
-description: runs EAMxx standalone testing with required configuration
+description: |
+  Run EAMxx standalone testing with required configuration inputs.
+  More precisely, it launches test-all-scream with the proper flags.
+  See components/eamxx/scripts/test-all-scream for more details.
+  The configuration inputs are:
+    - build_type: the type of build to pass to test-all-scream.
+    - machine: the name of the machine to pass to test-all-scream
+    - run_type: handles special flags to pass to test-all-scream. Options are:
+      - nightly: run the tests and submit to cdash (use -s)
+      - bless: run the tests and copy output files to baselines dir (use -g)
+      - at-run: simply run the tests
+
 
 inputs:
   build_type:
