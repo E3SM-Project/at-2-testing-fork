@@ -22,7 +22,7 @@ concurrency:
   # Two runs are in the same group if:
   #  - they have the same trigger
   #  - if trigger=pull_request, the PR number must match
-  group: ${{ github.workflow }}-${{ github.event_name}}-${{ github.event.pull_request.number || github.run_id}}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 jobs:
