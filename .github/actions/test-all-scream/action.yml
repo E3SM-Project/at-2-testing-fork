@@ -15,6 +15,14 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Check if OS is Linux
+      run: |
+        # Ensure the operating system is Linux
+        if [ "$(uname)" != "Linux" ]; then
+          echo "This action only supports Linux."
+          exit 1
+        fi
+      shell: bash
     - name: Validate inputs
       run: |
         VALID_RUN_TYPES="nightly at-run bless"
@@ -49,26 +57,34 @@ runs:
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
         fi
       shell: bash
-    - name: Determine if sudo is needed when updating certificates later
-      id: sudo-check
+    - name: Update CA certificates
+      if: always()
       run: |
+        # NOTE: we may need this step if we are running on a machine that uses special
+        #       CA certificates, as by default Node.js uses its own set of trusted root certificates,
+        #       which may not include all the system certificates
+        
+        # Check if we need to run with sudo. We need a) UID>0 and b) sudo cmd exists
         if [ "$UID" -eq 0 ]; then
-          echo "SUDO_CMD="
+          SUDO_CMD=""
         else
-          echo "SUDO_CMD=sudo"
-        fi >> $GITHUB_ENV
-      shell: bash
-    - name: Update ca certificates
-      if: runner.os == 'Linux'
-      run: |
-          if hash update-ca-certificates 2>/dev/null; then
-            ${{ env.SUDO_CMD }} update-ca-certificates
-          elif hash update-ca-trust 2>/dev/null; then
-            ${{ env.SUDO_CMD }} update-ca-trust
+          if command -v sudo &> /dev/null; then
+            SUDO_CMD="sudo"
           else
-            echo "No known CA certificates update command found."
-            exit 1
+            SUDO_CMD=""
           fi
+        fi
+
+        # Depending on distro, the cmd to update ca certificates is different
+        # These two cover the vast majority of linux distros
+        if hash update-ca-certificates 2>/dev/null; then
+          $SUDO_CMD update-ca-certificates
+        elif hash update-ca-trust 2>/dev/null; then
+          $SUDO_CMD update-ca-trust
+        else
+          echo "No known CA certificates update command found."
+          exit 1
+        fi
       shell: bash
     - name: Upload ctest logs
       if: always()
