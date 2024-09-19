@@ -2,6 +2,7 @@
 
 This action is meant to be used inside a workflow. E.g.,
 
+```yaml
 jobs:
   my-testing:
     steps:
@@ -12,6 +13,7 @@ jobs:
           build_type: <build-type>
           machine: <machine>
           run_type: <run-type>
+```
 
 The input run_type is the only input that this action has to explicitly handle.
 As such, this action checks that its value is one of the following.
