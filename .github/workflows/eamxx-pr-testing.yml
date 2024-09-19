@@ -11,15 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-all-scream:
-    runs-on: [self-hosted, openmp, gcc]
-    strategy:
-      fail-fast: false
-      matrix:
-        build_type: [sp, dbg, fpe, opt]
-        device: [openmp]
-        compiler: [gcc]
-    name: ${{ matrix.compiler }}-${{ matrix.device }}-${{ matrix.build_type }}
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
       - name: Show action trigger
         uses: actions/github-script@v6
@@ -31,12 +26,50 @@ jobs:
             console.log(`The job was triggered by a ${eventName} event.`);
             console.log(`  - Event action: ${eventAction}`);
             console.log(`  - Triggered by: ${actor}`);
+      - name: Cache repository
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .
+          key: ${{ runner.os }}-repo-${{ github.sha }}
       - name: Check out the repository
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           show-progress: false
           submodules: recursive
+      - name: Update cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/cache@v3
+        with:
+          path: |
+            .
+          key: ${{ runner.os }}-repo-${{ github.sha }}
+
+  test-all-scream:
+    needs: setup
+    runs-on: [self-hosted, openmp, gcc]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [sp, dbg, fpe, opt]
+        device: [openmp]
+        compiler: [gcc]
+    name: ${{ matrix.compiler }}-${{ matrix.device }}-${{ matrix.build_type }}
+    steps:
+      - name: Restore repository cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .
+          key: ${{ runner.os }}-repo-${{ github.sha }}
+      - name: Fail if no cache is found
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache not found. Failing the job."
+          exit 1
       - name: Run tests
         uses: ./.github/actions/test-all-scream
         with:
