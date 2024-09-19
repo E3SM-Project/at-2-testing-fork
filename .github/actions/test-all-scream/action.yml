@@ -51,7 +51,7 @@ runs:
       shell: bash
     - name: Upload ctest logs
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: log-files-${{ inputs.build_type }}
         path: components/eamxx/ctest-build/*/Testing/Temporary/Last*.log
