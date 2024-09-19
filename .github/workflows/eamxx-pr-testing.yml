@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on:  [self-hosted, openmp, gcc]
     outputs:
       cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
