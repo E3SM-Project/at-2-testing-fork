@@ -15,37 +15,46 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Check if OS is Linux
+    - name: Set CA certificates env var
       run: |
         # Ensure the operating system is Linux
         if [ "$(uname)" != "Linux" ]; then
           echo "This action only supports Linux."
           exit 1
         fi
-      shell: bash
+        # Set env var to be used in upload-artifacts phase
+        if [ -f /etc/debian_version ]; then
+          echo "::set-output name=ca_certs_path::/etc/ssl/certs/ca-certificates.crt"
+        elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || [ -f /etc/fedora-release ]; then
+          echo "::set-output name=ca_certs_path::/etc/pki/tls/certs/ca-bundle.crt"
+        else
+          echo "Unsupported Linux distribution"
+          exit 1
+        fi
+      shell: sh
     - name: Validate inputs
       run: |
         VALID_RUN_TYPES="nightly at-run bless"
-        if ! [[ " $VALID_RUN_TYPES " =~ " ${{ inputs.run_type }} " ]]; then
+        if [ "$(echo "$VALID_RUN_TYPES" | grep -w "${{ inputs.run_type }}")" = "" ]; then
           echo "Invalid run_type: ${{ inputs.run_type }}"
           echo "Valid choices: $VALID_RUN_TYPES"
           exit 1
         fi
-      shell: bash
+      shell: sh
     - name: Check repo presence
       run: |
         if [ ! -d ".git" ]; then
           echo "Repository is not checked out. Please ensure the repository is checked out before running this action."
           exit 1
         fi
-      shell: bash
+      shell: sh
     - name: Print build specs
       run: |
         echo "Testing EAMxx standalone, for the following configuration:"
         echo "  testing type: ${{ inputs.run_type }}"
         echo "  build type  : ${{ inputs.build_type }}"
         echo "  machine     : ${{ inputs.machine }}"
-      shell: bash
+      shell: sh
     - name: Run test-all-scream
       run: |
         cd components/eamxx
@@ -56,20 +65,7 @@ runs:
         else
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
         fi
-      shell: bash
-    - name: Set NODE_EXTRA_CA_CERTS
-      if: always()
-      id: set-ca-certs
-      run: |
-        if [ -f /etc/debian_version ]; then
-          echo "NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_ENV
-        elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || [ -f /etc/fedora-release ]; then
-          echo "NODE_EXTRA_CA_CERTS=/etc/pki/tls/certs/ca-bundle.crt" >> $GITHUB_ENV
-        else
-          echo "Unsupported distribution"
-          exit 1
-        fi
-      shell: bash
+      shell: sh
     - name: Upload ctest logs
       if: always()
       uses: actions/upload-artifact@v4
@@ -77,4 +73,4 @@ runs:
         name: log-files-${{ inputs.build_type }}
         path: components/eamxx/ctest-build/*/Testing/Temporary/Last*.log
       env:
-        NODE_EXTRA_CA_CERTS: ${{ env.NODE_EXTRA_CA_CERTS }}
+        NODE_EXTRA_CA_CERTS: ${{ steps.set-ca-certs.outputs.ca_certs_path }}
