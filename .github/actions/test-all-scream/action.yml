@@ -24,20 +24,11 @@ runs:
         fi
         # Set env var to be used in upload-artifacts phase
         if [ -f /etc/debian_version ]; then
-          echo "::set-output name=ca_certs_path::/etc/ssl/certs/ca-certificates.crt"
+          echo "ca_certs_path=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_OUTPUT
         elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || [ -f /etc/fedora-release ]; then
-          echo "::set-output name=ca_certs_path::/etc/pki/tls/certs/ca-bundle.crt"
+          echo "ca_certs_path=/etc/pki/tls/certs/ca-bundle.crt" >> $GITHUB_OUTPUT
         else
           echo "Unsupported Linux distribution"
-          exit 1
-        fi
-      shell: sh
-    - name: Validate inputs
-      run: |
-        VALID_RUN_TYPES="nightly at-run bless"
-        if [ "$(echo "$VALID_RUN_TYPES" | grep -w "${{ inputs.run_type }}")" = "" ]; then
-          echo "Invalid run_type: ${{ inputs.run_type }}"
-          echo "Valid choices: $VALID_RUN_TYPES"
           exit 1
         fi
       shell: sh
@@ -60,10 +51,13 @@ runs:
         cd components/eamxx
         if [ "${{ inputs.run_type }}" = "nightly" ]; then
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
-        elif [ "${{ inputs.run_type }}" = "generate" ]; then 
+        elif [ "${{ inputs.run_type }}" = "bless" ]; then 
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
-        else
+        elif [ "${{ inputs.run_type }}" = "at-run" ]; then
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+        else
+          echo "Invalid run_type: ${{ inputs.run_type }}"
+          echo "Valid choices: nightly, bless, at-run
         fi
       shell: sh
     - name: Upload ctest logs
