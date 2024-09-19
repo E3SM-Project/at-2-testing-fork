@@ -57,7 +57,7 @@ runs:
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
         else
           echo "Invalid run_type: ${{ inputs.run_type }}"
-          echo "Valid choices: nightly, bless, at-run
+          echo "Valid choices: nightly, bless, at-run"
         fi
       shell: sh
     - name: Upload ctest logs
