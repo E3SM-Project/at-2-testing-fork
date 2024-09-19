@@ -57,32 +57,16 @@ runs:
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
         fi
       shell: bash
-    - name: Update CA certificates
+    - name: Set NODE_EXTRA_CA_CERTS
       if: always()
+      id: set-ca-certs
       run: |
-        # NOTE: we may need this step if we are running on a machine that uses special
-        #       CA certificates, as by default Node.js uses its own set of trusted root certificates,
-        #       which may not include all the system certificates
-        
-        # Check if we need to run with sudo. We need a) UID>0 and b) sudo cmd exists
-        if [ "$UID" -eq 0 ]; then
-          SUDO_CMD=""
+        if [ -f /etc/debian_version ]; then
+          echo "NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_ENV
+        elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || [ -f /etc/fedora-release ]; then
+          echo "NODE_EXTRA_CA_CERTS=/etc/pki/tls/certs/ca-bundle.crt" >> $GITHUB_ENV
         else
-          if command -v sudo &> /dev/null; then
-            SUDO_CMD="sudo"
-          else
-            SUDO_CMD=""
-          fi
-        fi
-
-        # Depending on distro, the cmd to update ca certificates is different
-        # These two cover the vast majority of linux distros
-        if hash update-ca-certificates 2>/dev/null; then
-          $SUDO_CMD update-ca-certificates
-        elif hash update-ca-trust 2>/dev/null; then
-          $SUDO_CMD update-ca-trust
-        else
-          echo "No known CA certificates update command found."
+          echo "Unsupported distribution"
           exit 1
         fi
       shell: bash
@@ -92,3 +76,5 @@ runs:
       with:
         name: log-files-${{ inputs.build_type }}
         path: components/eamxx/ctest-build/*/Testing/Temporary/Last*.log
+      env:
+        NODE_EXTRA_CA_CERTS: ${{ env.NODE_EXTRA_CA_CERTS }}
