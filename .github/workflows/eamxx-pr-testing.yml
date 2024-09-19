@@ -55,6 +55,7 @@ jobs:
     name: ${{ matrix.compiler }}-${{ matrix.device }}-${{ matrix.build_type }}
     steps:
       - name: Restore repository cache
+        id: restore-cache
         uses: actions/cache@v3
         with:
           path: |
