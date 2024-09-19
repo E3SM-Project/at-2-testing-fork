@@ -42,15 +42,6 @@ jobs:
           persist-credentials: false
           show-progress: false
           submodules: recursive
-      - name: Update cache
-        if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache@v3
-        with:
-          path: |
-            .
-          key: ${{ runner.os }}-repo-${{ github.sha }}
-        env:
-          NODE_EXTRA_CA_CERTS: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
 
   test-all-scream:
     needs: setup
