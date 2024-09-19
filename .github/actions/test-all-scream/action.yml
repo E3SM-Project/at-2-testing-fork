@@ -24,9 +24,9 @@ runs:
         fi
         # Set env var to be used in upload-artifacts phase
         if [ -f /etc/debian_version ]; then
-          echo "ca_certs_path=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_OUTPUT
+          echo "NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_ENV
         elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || [ -f /etc/fedora-release ]; then
-          echo "ca_certs_path=/etc/pki/tls/certs/ca-bundle.crt" >> $GITHUB_OUTPUT
+          echo "NODE_EXTRA_CA_CERTS=/etc/pki/tls/certs/ca-bundle.crt" >> $GITHUB_ENV
         else
           echo "Unsupported Linux distribution"
           exit 1
@@ -67,4 +67,4 @@ runs:
         name: log-files-${{ inputs.build_type }}
         path: components/eamxx/ctest-build/*/Testing/Temporary/Last*.log
       env:
-        NODE_EXTRA_CA_CERTS: ${{ steps.set-ca-certs.outputs.ca_certs_path }}
+        NODE_EXTRA_CA_CERTS: ${{ env.NODE_EXTRA_CA_CERTS }}
