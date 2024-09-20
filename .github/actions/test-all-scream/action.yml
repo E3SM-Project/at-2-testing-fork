@@ -1,0 +1,81 @@
+name: EAMxx standalone testing
+description: |
+  Run EAMxx standalone testing with required configuration inputs.
+  More precisely, it launches test-all-scream with the proper flags.
+  See components/eamxx/scripts/test-all-scream for more details.
+  The configuration inputs are:
+    - build_type: the type of build to pass to test-all-scream. See the
+      documentation of test-all-scream for a list of valid build types
+    - machine: the name of the machine to pass to test-all-scream
+    - run_type: handles special flags to pass to test-all-scream. Options are:
+      - nightly: run the tests and submit to cdash (use -s)
+      - bless: run the tests and copy output files to baselines dir (use -g)
+      - at-run: simply run the tests
+
+inputs:
+  build_type:
+    description: 'Build type to run'
+    required: true
+  machine:
+    description: 'Machine name for test-all-scream'
+    required: true
+  run_type:
+    description: 'Type of test-all-scream run'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set CA certificates env var
+      run: |
+        # Ensure the operating system is Linux
+        if [ "$(uname)" != "Linux" ]; then
+          echo "This action only supports Linux."
+          exit 1
+        fi
+        # Set env var to be used in upload-artifacts phase
+        if [ -f /etc/debian_version ]; then
+          echo "NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_ENV
+        elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || [ -f /etc/fedora-release ]; then
+          echo "NODE_EXTRA_CA_CERTS=/etc/pki/tls/certs/ca-bundle.crt" >> $GITHUB_ENV
+        else
+          echo "Unrecognized/unuspported Linux distribution. Setting NODE_EXTRA_CA_CERTS to empty."
+          echo "NODE_EXTRA_CA_CERTS=" >> $GITHUB_ENV
+        fi
+      shell: sh
+    - name: Check repo presence
+      run: |
+        if [ ! -d ".git" ]; then
+          echo "Repository is not checked out. Please ensure the repository is checked out before running this action."
+          exit 1
+        fi
+      shell: sh
+    - name: Print build specs
+      run: |
+        echo "Testing EAMxx standalone, for the following configuration:"
+        echo "  testing type: ${{ inputs.run_type }}"
+        echo "  build type  : ${{ inputs.build_type }}"
+        echo "  machine     : ${{ inputs.machine }}"
+      shell: sh
+    - name: Run test-all-scream
+      run: |
+        cd components/eamxx
+        if [ "${{ inputs.run_type }}" = "nightly" ]; then
+          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
+        elif [ "${{ inputs.run_type }}" = "bless" ]; then 
+          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
+        elif [ "${{ inputs.run_type }}" = "at-run" ]; then
+          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+        else
+          echo "Invalid run_type: ${{ inputs.run_type }}"
+          echo "Valid choices: nightly, bless, at-run"
+        fi
+      shell: sh
+    - name: Upload ctest logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: log-files-${{ inputs.build_type }}
+        path: components/eamxx/ctest-build/*/Testing/Temporary/Last*.log
+      env:
+        NODE_EXTRA_CA_CERTS: ${{ env.NODE_EXTRA_CA_CERTS }}
