@@ -43,6 +43,7 @@ jobs:
           show-progress: false
       - name: Check out only needed submodules
         run: |
+          git config url."https://github.com/".insteadOf "git@github.com:"
           git submodule update --init --recursive ./cime
           git submodule update --init --recursive ./externals/ekat
           git submodule update --init --recursive ./externals/YAKL
