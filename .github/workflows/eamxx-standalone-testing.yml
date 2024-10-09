@@ -36,14 +36,14 @@ jobs:
     if: ${{ github.event_name == 'pull_request' || contains(github.event.inputs.jobs_to_run, 'gcc-openmp') }}
     name: gcc-openmp-${{ matrix.build_type }}
     steps:
-      - name: Show action trigger
-        uses: ./.github/actions/print-workflow-trigger
       - name: Check out the repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           show-progress: false
           submodules: recursive
+      - name: Show action trigger
+        uses: ./.github/actions/print-workflow-trigger
       - name: Set run_type based on event
         id: set-run-type
         run: |
