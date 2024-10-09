@@ -36,6 +36,10 @@ jobs:
     if: ${{ github.event_name == 'pull_request' || contains(github.event.inputs.machine, 'gcc-openmp') }}
     name: gcc-openmp-${{ matrix.build_type }}
     steps:
+      - name: My info
+        run: |
+          id
+          ls -l /projects/e3sm
       - name: Check out the repository
         uses: actions/checkout@v4
         with:
