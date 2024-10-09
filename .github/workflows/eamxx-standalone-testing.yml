@@ -45,19 +45,7 @@ jobs:
         with:
           persist-credentials: false
           show-progress: false
-          submodules: false
-      - name: Check out only needed submodules
-        run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git config --get-regexp url
-          cat .gitmodules
-          git submodule update --init --recursive ./cime
-          git submodule update --init --recursive ./externals/ekat
-          git submodule update --init --recursive ./externals/YAKL
-          git submodule update --init --recursive ./externals/scorpio
-          git submodule update --init --recursive ./externals/mam4xx
-          git submodule update --init --recursive ./externals/haero
-          git submodule update --init --recursive ./components/eam/src/physics/rrtmgp/external
+          submodules: recursive
       - name: Show action trigger
         uses: ./.github/actions/print-workflow-trigger
       - name: Set run_type based on event
