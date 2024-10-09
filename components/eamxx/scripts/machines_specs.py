@@ -96,7 +96,7 @@ MACHINE_METADATA = {
     "ghci-snl-openmp" : ([],
                          ["mpicxx","mpifort","mpicc"],
                          "",
-                         "/projects/e3sm/baselines/scream/master-baselines"
+                         "/projects/e3sm/baselines/"
                         ),
 }
 
