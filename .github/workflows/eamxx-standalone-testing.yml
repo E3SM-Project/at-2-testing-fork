@@ -41,6 +41,7 @@ jobs:
         with:
           persist-credentials: false
           show-progress: false
+          submodules: false
       - name: Check out only needed submodules
         run: |
           git config url."https://github.com/".insteadOf "git@github.com:"
