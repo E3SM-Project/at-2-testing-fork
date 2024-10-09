@@ -1,0 +1,92 @@
+name: EAMxx standalone testing
+
+on:
+  # Runs on PRs against master
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, ready_for_review, reopened]
+
+  # Manual run can be used to bless
+  workflow_dispatch:
+    inputs:
+      machine:
+        description: 'Comma-separated list of jobs to run'
+        required: false
+        default: 'gcc-openmp'
+
+  # Add schedule trigger for nightly runs at midnight MT (Standard Time)
+  # schedule:
+  #   - cron: '0 7 * * *'  # Runs at 7 AM UTC, which is midnight MT during Standard Time
+
+concurrency:
+  # Two runs are in the same group if:
+  #  - they have the same trigger
+  #  - if trigger=pull_request, the PR number must match
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  gcc-openmp:
+    runs-on:  [self-hosted, openmp, gcc]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [sp, dbg, fpe, opt]
+    # Runs always for pull_request. For workflow_dispatch, user must request this machine
+    if: ${{ github.event_name == 'pull_request' || contains(github.event.inputs.jobs_to_run, 'gcc-openmp') }}
+    name: gcc-openmp-${{ matrix.build_type }}
+    steps:
+      - name: Show action trigger
+        uses: ./.github/actions/print-workflow-trigger
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Set run_type based on event
+        id: set-run-type
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "run_type=at-run" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "run_type=nightly" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "run_type=bless" >> $GITHUB_ENV
+          else
+            echo "Unsupported event type: ${{ github.event_name }}"
+            exit 1
+          fi
+      - name: Run tests
+        uses: ./.github/actions/test-all-scream
+        with:
+          build_type: ${{ matrix.build_type }}
+          machine: ghci-snl-openmp
+          run_type: ${{ env.run_type }}
+  # cuda:
+  #   # Disable until the CUDA container is up and running. When CUDA container is availabe, remove
+  #   # this line and uncomment the next if
+  #   if: false
+  #   # Runs always for pull_request. For workflow_dispatch, user must request this machine
+  #   # if: ${{ github.event_name == 'pull_request' || contains(github.event.inputs.jobs_to_run, 'openmp-gcc') }}
+  #   runs-on:  [self-hosted, cuda]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       build_type: [sp, dbg, fpe, opt]
+  #   name: cuda-${{ matrix.build_type }}
+  #   steps:
+  #     - name: Show action trigger
+  #       uses: ./.github/actions/print-workflow-trigger
+  #     - name: Check out the repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         persist-credentials: false
+  #         show-progress: false
+  #         submodules: recursive
+  #     - name: Run tests
+  #       uses: ./.github/actions/test-all-scream
+  #       with:
+  #         build_type: ${{ matrix.build_type }}
+  #         machine: ghci-snl-cuda
+  #         run_type: at-run
