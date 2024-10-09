@@ -44,7 +44,7 @@ jobs:
           submodules: false
       - name: Check out only needed submodules
         run: |
-          git config url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
           git config --get-regexp url
           cat .gitmodules
           git submodule update --init --recursive ./cime
