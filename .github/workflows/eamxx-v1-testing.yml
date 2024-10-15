@@ -1,0 +1,130 @@
+name: EAMxx v1 testing
+
+on:
+  # Runs on PRs against master
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, ready_for_review, reopened]
+
+  # Manual run is used to bless
+  workflow_dispatch:
+    inputs:
+      jobs_list:
+        description: 'Comma-separated list of jobs to run'
+        required: false
+        default: 'gcc-openmp'
+      tests:
+        description: 'Comma-separated list of CIME tests to run'
+        required: true
+      bless:
+        description: 'Whether we are generating baselines'
+        required: true
+        default: 'false'
+        valid_values:
+          - 'true'
+          - 'false'
+
+  # Add schedule trigger for nightly runs at midnight MT (Standard Time)
+  # schedule:
+  #   - cron: '0 7 * * *'  # Runs at 7 AM UTC, which is midnight MT during Standard Time
+
+concurrency:
+  # Two runs are in the same group if:
+  #  - they have the same trigger
+  #  - if trigger=pull_request, the PR number must match
+  #  - if trigger=workflow_dispatch, the inputs are the same
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{
+             github.event_name == 'pull_request' ? github.event.pull_request.number : github.run_id
+           }}
+  cancel-in-progress: true
+
+jobs:
+  gcc-openmp:
+    runs-on:  [self-hosted, openmp, gcc]
+    strategy:
+      fail-fast: false
+      matrix:
+        test: 
+          - ERS_Ln9.ne4_ne4.F2000-SCREAMv1-AQP1.ghci-snl-openmp_gnu.scream-output-preset-2
+          - ERS_Ln22.ne4pg2_ne4pg2.FIOP-SCREAMv1-DP.ghci-snl-openmp_gnu.scream-dpxx-arm97
+          - ERS_Ln22.ne4pg2_ne4pg2.F2010-SCREAMv1.ghci-snl-openmp_gnu.scream-small_kernels--scream-output-preset-5
+    # Run this workflow if:
+    #   - workflow_dispatch: user requested this job.
+    #   - schedule: always:
+    #   - pull_request: matching skip label is NOT found
+    if: ${{ 
+          github.event_name == 'schedule' || 
+          ( github.event_name == 'workflow_dispatch' && contains(github.event.inputs.jobs_list, 'gcc-openmp')) ||
+          (
+            github.event_name == 'pull_request' &&
+            !(
+              contains(github.event.pull_request.labels.*.name, 'AT: skip gcc-openmp') || 
+              contains(github.event.pull_request.labels.*.name, 'AT: skip standalone')
+            )
+          )
+        }}
+    steps:
+      - name: Show action trigger
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const eventName = context.eventName;
+            const eventAction = context.payload.action || 'N/A';
+            const actor = context.actor;
+            console.log(`The job was triggered by a ${eventName} event.`);
+            console.log(`  - Event action: ${eventAction}`);
+            console.log(`  - Triggered by: ${actor}`);
+      - name: Set CA certificates env var
+        run: |
+          # Ensure the operating system is Linux
+          if [ "$(uname)" != "Linux" ]; then
+            echo "This action only supports Linux."
+            exit 1
+          fi
+          # Set env var to be used in upload-artifacts phase
+          if [ -f /etc/debian_version ]; then
+            echo "NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_ENV
+          elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ] || [ -f /etc/fedora-release ]; then
+            echo "NODE_EXTRA_CA_CERTS=/etc/pki/tls/certs/ca-bundle.crt" >> $GITHUB_ENV
+          else
+            echo "Unsupported Linux distribution"
+            exit 1
+          fi
+      - name: Establish tests and flags
+        run: |
+          cmp_flag="-c"
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "tests=e3sm_scream_v1" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "test=$(echo ${{ inputs.tests }} | tr ',' ' ')" >> $GITHUB_ENV
+            if [ "${{ inputs.bless }}" == "true" ]; then
+              cmp_flag="-g"
+            fi
+          else
+            echo "test=e3sm_scream_v1_at" >> $GITHUB_ENV
+          fi
+          echo "flags=$cmp_flag -b master" >> $GITHUB_ENV
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Run tests
+        run: |
+          ./cime/scripts/create_tests ${{ env.tests }} ${{ env.flags }}
+      - name: Upload case archives
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.test }}
+          path: |
+            /projects/e3sm/scratch/archive/${{ matrix.test }}/TestStatus.log
+            /projects/e3sm/scratch/archive/${{ matrix.test }}/bld/*.bldlog.*
+            /projects/e3sm/scratch/archive/${{ matrix.test }}/bld/case2bld/*.bldlog.*
+            /projects/e3sm/scratch/archive/${{ matrix.test }}/run/*.log.*
+            /projects/e3sm/scratch/archive/${{ matrix.test }}/run/case2run/*.log.*
+            /projects/e3sm/scratch/archive/${{ matrix.test }}/run/*.cprnc.out
+            /projects/e3sm/scratch/archive/${{ matrix.test }}/run/case2run/*.cprnc.out
+        env:
+          NODE_EXTRA_CA_CERTS: ${{ env.NODE_EXTRA_CA_CERTS }}
