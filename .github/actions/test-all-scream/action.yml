@@ -6,10 +6,8 @@ description: |
   The configuration inputs are:
     - build_type: the type of build to pass to test-all-scream.
     - machine: the name of the machine to pass to test-all-scream
-    - run_type: handles special flags to pass to test-all-scream. Options are:
-      - nightly: run the tests and submit to cdash (use -s)
-      - bless: run the tests and copy output files to baselines dir (use -g)
-      - at-run: simply run the tests
+    - generate: whether to generate baselines
+    - submit: whether to submit to cdash (unused if generate is 'true')
 
 inputs:
   build_type:
@@ -18,9 +16,20 @@ inputs:
   machine:
     description: 'Machine name for test-all-scream'
     required: true
-  run_type:
-    description: 'Type of test-all-scream run'
+  generate:
+    description: 'Generate baselines instead of running tests'
     required: true
+    default: 'false'
+    valid_values:
+      - 'true'
+      - 'false'
+  submit:
+    description: 'Submit results to cdash (unused if generate=true)'
+    required: true
+    default: 'false'
+    valid_values:
+      - 'true'
+      - 'false'
 
 runs:
   using: "composite"
@@ -52,22 +61,20 @@ runs:
     - name: Print build specs
       run: |
         echo "Testing EAMxx standalone, for the following configuration:"
-        echo "  testing type: ${{ inputs.run_type }}"
-        echo "  build type  : ${{ inputs.build_type }}"
-        echo "  machine     : ${{ inputs.machine }}"
+        echo "  build type : ${{ inputs.build_type }}"
+        echo "  machine    : ${{ inputs.machine }}"
+        echo "  generate   : ${{ inputs.generate }}"
+        echo "  submit     : ${{ inputs.submit }}"
       shell: sh
     - name: Run test-all-scream
       run: |
         cd components/eamxx
-        if [ "${{ inputs.run_type }}" = "nightly" ]; then
-          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
-        elif [ "${{ inputs.run_type }}" = "bless" ]; then 
+        if [ "${{ inputs.generate }}" = "true" ]; then
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
-        elif [ "${{ inputs.run_type }}" = "at-run" ]; then
-          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+        elif [ "${{ inputs.submit }}" = "true" ]; then 
+          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
         else
-          echo "Invalid run_type: ${{ inputs.run_type }}"
-          echo "Valid choices: nightly, bless, at-run"
+          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
         fi
       shell: sh
     - name: Upload ctest logs
