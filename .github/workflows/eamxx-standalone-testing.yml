@@ -31,8 +31,7 @@ concurrency:
   #  - if trigger=pull_request, the PR number must match
   #  - if trigger=workflow_dispatch, the inputs are the same
   group: ${{ github.workflow }}-${{ github.event_name }}-${{
-             github.event_name == 'workflow_dispatch' ? inputs.jobs_list :
-               (github.event_name == 'pull_request' ? github.event.pull_request.number : 'nightly')
+             github.event_name == 'pull_request' ? github.event.pull_request.number : github.run_id
            }}
   cancel-in-progress: true
 
