@@ -39,15 +39,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gcc-openmp:
-    runs-on:  [self-hosted, openmp, gcc]
+  gcc-cpu:
+    runs-on:  [self-hosted, gcc, cpu]
     strategy:
       fail-fast: false
       matrix:
         test: 
-          - ERS_Ln9.ne4_ne4.F2000-SCREAMv1-AQP1.ghci-snl-openmp_gnu.scream-output-preset-2
-          - ERS_Ln22.ne4pg2_ne4pg2.FIOP-SCREAMv1-DP.ghci-snl-openmp_gnu.scream-dpxx-arm97
-          - ERS_Ln22.ne4pg2_ne4pg2.F2010-SCREAMv1.ghci-snl-openmp_gnu.scream-small_kernels--scream-output-preset-5
+          - ERS_Ln9.ne4_ne4.F2000-SCREAMv1-AQP1.ghci-snl-cpu_gnu.scream-output-preset-2
+          - ERS_Ln22.ne4pg2_ne4pg2.FIOP-SCREAMv1-DP.ghci-snl-cpu_gnu.scream-dpxx-arm97
+          - ERS_Ln22.ne4pg2_ne4pg2.F2010-SCREAMv1.ghci-snl-cpu_gnu.scream-small_kernels--scream-output-preset-5
     # Run this workflow if:
     #   - workflow_dispatch: user requested this job.
     #   - schedule: always:
