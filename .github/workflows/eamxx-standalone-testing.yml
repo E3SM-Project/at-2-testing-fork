@@ -45,9 +45,10 @@ jobs:
     #   - workflow_dispatch: user requested this job.
     #   - schedule: always:
     #   - pull_request: matching skip label is NOT found
-    if: ${{ 
+    if: |
+      ${{
           github.event_name == 'schedule' || 
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.jobs_list == 'gcc-openmp') ||
+          ( github.event_name == 'workflow_dispatch' && github.event.inputs.jobs_list == 'gcc-openmp' ) ||
           (
             github.event_name == 'pull_request' &&
             !(
