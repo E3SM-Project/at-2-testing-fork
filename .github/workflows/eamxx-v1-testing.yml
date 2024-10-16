@@ -10,13 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       jobs_list:
-        description: 'Comma-separated list of jobs to run'
+        description: 'Job to run'
         required: true
         type: choice
         options:
           - gcc-cpu
       bless:
-        description: 'Whether we are generating baselines or simply running the workflow'
+        description: 'Generate baselines'
         required: true
         type: boolean
 
