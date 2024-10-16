@@ -16,7 +16,7 @@ on:
         options:
           - gcc-openmp
       bless:
-        description: 'Whether we are generating baselines or simply running the workflow'
+        description: 'Generate baselines'
         required: true
         type: boolean
 
