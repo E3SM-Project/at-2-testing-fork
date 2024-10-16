@@ -1,4 +1,4 @@
-name: EAMxx v1 testing
+name: EAMxx v1 CI testing
 
 on:
   # Runs on PRs against master
@@ -11,22 +11,14 @@ on:
     inputs:
       jobs_list:
         description: 'Comma-separated list of jobs to run'
-        required: false
-        default: 'gcc-openmp'
-      tests:
-        description: 'Comma-separated list of CIME tests to run'
         required: true
+        type: choice
+        options:
+          - gcc-cpu
       bless:
-        description: 'Whether we are generating baselines'
+        description: 'Whether we are generating baselines or simply running the workflow'
         required: true
-        default: 'false'
-        valid_values:
-          - 'true'
-          - 'false'
-
-  # Add schedule trigger for nightly runs at midnight MT (Standard Time)
-  # schedule:
-  #   - cron: '0 7 * * *'  # Runs at 7 AM UTC, which is midnight MT during Standard Time
+        type: boolean
 
 concurrency:
   # Two runs are in the same group if:
@@ -42,12 +34,12 @@ jobs:
   gcc-cpu:
     runs-on:  [self-hosted, gcc, cpu]
     strategy:
-      fail-fast: false
       matrix:
         test: 
           - ERS_Ln9.ne4_ne4.F2000-SCREAMv1-AQP1.ghci-snl-cpu_gnu.scream-output-preset-2
           - ERS_Ln22.ne4pg2_ne4pg2.FIOP-SCREAMv1-DP.ghci-snl-cpu_gnu.scream-dpxx-arm97
           - ERS_Ln22.ne4pg2_ne4pg2.F2010-SCREAMv1.ghci-snl-cpu_gnu.scream-small_kernels--scream-output-preset-5
+      fail-fast: false
     # Run this workflow if:
     #   - workflow_dispatch: user requested this job.
     #   - schedule: always:
@@ -58,8 +50,8 @@ jobs:
           (
             github.event_name == 'pull_request' &&
             !(
-              contains(github.event.pull_request.labels.*.name, 'AT: skip gcc-openmp') || 
-              contains(github.event.pull_request.labels.*.name, 'AT: skip standalone')
+              contains(github.event.pull_request.labels.*.name, 'AT: skip gcc') || 
+              contains(github.event.pull_request.labels.*.name, 'AT: skip v1')
             )
           )
         }}
@@ -90,29 +82,24 @@ jobs:
             echo "Unsupported Linux distribution"
             exit 1
           fi
-      - name: Establish tests and flags
+      - name: Establish cmp/gen flag
         run: |
-          cmp_flag="-c"
-          if [ "${{ github.event_name }}" == "schedule" ]; then
-            echo "tests=e3sm_scream_v1" >> $GITHUB_ENV
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "test=$(echo ${{ inputs.tests }} | tr ',' ' ')" >> $GITHUB_ENV
-            if [ "${{ inputs.bless }}" == "true" ]; then
-              cmp_flag="-g"
+          cmp_gen_flag="-c"
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ ${{ inputs.bless }} ]; then
+              cmp_gen_flag="-g"
             fi
-          else
-            echo "test=e3sm_scream_v1_at" >> $GITHUB_ENV
           fi
-          echo "flags=$cmp_flag -b master" >> $GITHUB_ENV
+          echo "flags=$cmp_gen_flag -b master" >> $GITHUB_ENV
       - name: Check out the repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           show-progress: false
           submodules: recursive
-      - name: Run tests
+      - name: Run test
         run: |
-          ./cime/scripts/create_tests ${{ env.tests }} ${{ env.flags }}
+          ./cime/scripts/create_test ${{ matrix.test }} ${{ env.flags }}
       - name: Upload case archives
         if: ${{ always() }}
         uses: actions/upload-artifact@v4

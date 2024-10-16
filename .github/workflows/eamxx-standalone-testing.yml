@@ -10,16 +10,15 @@ on:
   workflow_dispatch:
     inputs:
       jobs_list:
-        description: 'Comma-separated list of jobs to run'
-        required: false
-        default: 'gcc-openmp'
-      bless:
-        description: 'Whether this run is for blessing'
+        description: 'Job to run'
         required: true
-        default: 'false'
-        valid_values:
-          - 'true'
-          - 'false'
+        type: choice
+        options:
+          - gcc-openmp
+      bless:
+        description: 'Whether we are generating baselines or simply running the workflow'
+        required: true
+        type: boolean
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
   # schedule:
@@ -48,7 +47,7 @@ jobs:
     #   - pull_request: matching skip label is NOT found
     if: ${{ 
           github.event_name == 'schedule' || 
-          (github.event_name == 'workflow_dispatch' && contains(github.event.inputs.jobs_list, 'gcc-openmp')) ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.jobs_list == 'gcc-openmp') ||
           (
             github.event_name == 'pull_request' &&
             !(
