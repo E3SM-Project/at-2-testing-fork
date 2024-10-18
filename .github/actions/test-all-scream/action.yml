@@ -74,9 +74,16 @@ runs:
         elif [ "${{ inputs.submit }}" = "true" ]; then 
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
         else
-          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON --config-only
         fi
       shell: sh
+    - name: List stuff
+      shell: sh
+      run: |
+        ls
+        ls ctest-build
+        ls ctest-build/*
+        ls ctest-build/*/Testing/Temporary
     - name: Upload ctest logs
       if: always()
       uses: actions/upload-artifact@v4
