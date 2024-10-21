@@ -67,8 +67,8 @@ runs:
         echo "  submit     : ${{ inputs.submit }}"
       shell: sh
     - name: Run test-all-scream
+      working-directory: components/eamxx
       run: |
-        cd components/eamxx
         if [ "${{ inputs.generate }}" = "true" ]; then
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
         elif [ "${{ inputs.submit }}" = "true" ]; then 
@@ -77,13 +77,6 @@ runs:
           ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON --config-only
         fi
       shell: sh
-    - name: List stuff
-      shell: sh
-      run: |
-        ls
-        ls ctest-build
-        ls ctest-build/*
-        ls ctest-build/*/Testing/Temporary
     - name: Upload ctest logs
       if: always()
       uses: actions/upload-artifact@v4
