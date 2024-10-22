@@ -30,6 +30,10 @@ inputs:
     valid_values:
       - 'true'
       - 'false'
+  cmake-configs:
+    description: 'Semicolon-separated list of key=value pairs for CMake to pass to test-all-scream'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -61,21 +65,29 @@ runs:
     - name: Print build specs
       run: |
         echo "Testing EAMxx standalone, for the following configuration:"
-        echo "  build type : ${{ inputs.build_type }}"
-        echo "  machine    : ${{ inputs.machine }}"
-        echo "  generate   : ${{ inputs.generate }}"
-        echo "  submit     : ${{ inputs.submit }}"
+        echo "  build type   : ${{ inputs.build_type }}"
+        echo "  machine      : ${{ inputs.machine }}"
+        echo "  generate     : ${{ inputs.generate }}"
+        echo "  submit       : ${{ inputs.submit }}"
+        echo "  cmake-configs: ${{ inputs.cmake-configs }}"
       shell: sh
     - name: Run test-all-scream
       working-directory: components/eamxx
       run: |
+        cmd="./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON"
         if [ "${{ inputs.generate }}" = "true" ]; then
-          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -g
+          cmd+=" -g"
         elif [ "${{ inputs.submit }}" = "true" ]; then 
-          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON -s
-        else
-          ./scripts/test-all-scream -m ${{ inputs.machine }} -t ${{inputs.build_type}} --baseline-dir AUTO -c EKAT_DISABLE_TPL_WARNINGS=ON
+          cmd+=" -s"
         fi
+
+        # If cmake-configs is non-empty, add tokens to test-all-scream via "-c key=val"
+        IFS=';' read -ra configs <<< "${{ inputs.cmake-configs }}"
+        for config in "${configs[@]}"; do
+          cmd+=" -c $config"
+        done
+
+        eval $cmd
       shell: sh
     - name: Upload ctest logs
       if: always()
