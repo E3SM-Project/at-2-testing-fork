@@ -82,6 +82,9 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: log-files-${{ inputs.build_type }}
-        path: components/eamxx/ctest-build/*/Testing/Temporary/Last*.log
+        path: |
+          components/eamxx/ctest-build/*/Testing/Temporary/Last*.log
+          components/eamxx/ctest-build/*/ctest_resource_file.json
+          components/eamxx/ctest-build/*/CMakeCache.txt
       env:
         NODE_EXTRA_CA_CERTS: ${{ env.NODE_EXTRA_CA_CERTS }}
