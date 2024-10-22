@@ -402,6 +402,9 @@ class TestAllScream(object):
     ###############################################################################
         res_name = "compile_res_count" if for_compile else "testing_res_count"
 
+        slurm_vars = "\n".join(f"{key}: {value}" for key, value in os.environ.items() if key.startswith('SLURM'))
+        print(f"SLURM env vars:\n{slurm_vars}")
+
         if not for_compile and self.on_cuda():
             # For GPUs, the cpu affinity is irrelevant. Just assume all GPUS are open
             affinity_cp = list(range(self._ctest_max_jobs))
