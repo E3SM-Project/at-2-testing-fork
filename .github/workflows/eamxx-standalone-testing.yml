@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   gcc-openmp:
-    runs-on:  [self-hosted, openmp, gcc]
+    runs-on:  [self-hosted, ghci-snl-cpu, gcc]
     strategy:
       fail-fast: true
       matrix:
@@ -90,9 +90,10 @@ jobs:
         uses: ./.github/actions/test-all-scream
         with:
           build_type: ${{ matrix.build_type }}
-          machine: ghci-snl-openmp
+          machine: ghci-snl-cpu
           generate: ${{ env.generate }}
           submit: ${{ env.submit }}
+          cmake-configs: Kokkos_ENABLE_OPENMP=ON
   # cuda:
   #   # Disable until the CUDA container is up and running. When CUDA container is availabe, remove
   #   # this line and uncomment the next if
