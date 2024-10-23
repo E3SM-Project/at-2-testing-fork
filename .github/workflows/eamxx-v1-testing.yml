@@ -14,7 +14,7 @@ on:
         required: true
         type: choice
         options:
-          - gcc-cpu
+          - cpu-gcc
       bless:
         description: 'Generate baselines'
         required: true
@@ -31,8 +31,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gcc-cpu:
-    runs-on:  [self-hosted, gcc, cpu]
+  cpu-gcc:
+    runs-on:  [self-hosted, gcc, ghci-snl-cpu]
     strategy:
       matrix:
         test: 
