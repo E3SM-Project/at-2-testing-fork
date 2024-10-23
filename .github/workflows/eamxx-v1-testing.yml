@@ -116,3 +116,7 @@ jobs:
             /projects/e3sm/scratch/${{ matrix.test }}*/run/case2run/*.cprnc.out
         env:
           NODE_EXTRA_CA_CERTS: ${{ env.NODE_EXTRA_CA_CERTS }}
+      - name: Clean up
+        if: ${{ always() }}
+        run: |
+          rm -rf /projects/e3sm/scratch/${{ matrix.test }}*
