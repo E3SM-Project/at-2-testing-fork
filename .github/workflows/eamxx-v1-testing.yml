@@ -37,7 +37,7 @@ jobs:
       matrix:
         test: 
           - ERS_Ln9.ne4_ne4.F2000-SCREAMv1-AQP1.ghci-snl-cpu_gnu.scream-output-preset-2
-          - ERS_Ln22.ne4pg2_ne4pg2.FIOP-SCREAMv1-DP.ghci-snl-cpu_gnu.scream-dpxx-arm97
+          - ERS_P16_Ln22.ne30pg2_ne30pg2.FIOP-SCREAMv1-DP.ghci-snl-cpu_gnu.scream-dpxx-arm97
           - ERS_Ln22.ne4pg2_ne4pg2.F2010-SCREAMv1.ghci-snl-cpu_gnu.scream-small_kernels--scream-output-preset-5
       fail-fast: false
     # Run this workflow if:
