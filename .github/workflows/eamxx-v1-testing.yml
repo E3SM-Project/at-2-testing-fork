@@ -88,7 +88,7 @@ jobs:
           cmp_gen_flag="-c"
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             if [ ${{ inputs.bless }} ]; then
-              cmp_gen_flag="-g"
+              cmp_gen_flag="-o -g"
             fi
           fi
           echo "flags=$cmp_gen_flag -b master" >> $GITHUB_ENV
@@ -100,7 +100,7 @@ jobs:
           submodules: recursive
       - name: Run test
         run: |
-          ./cime/scripts/create_test ${{ matrix.test }} ${{ env.flags }}
+          ./cime/scripts/create_test ${{ matrix.test }} ${{ env.flags }} --wait
       - name: Upload case files
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
