@@ -87,7 +87,9 @@ runs:
           cmd+=" -c $config"
         done
 
-        eval $cmd
+        # Print the full command, then run it
+        echo "test-all-scream call: $cmd"
+        $cmd
       shell: sh
     - name: Upload ctest logs
       if: always()
