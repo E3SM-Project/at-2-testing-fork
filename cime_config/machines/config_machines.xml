@@ -1655,7 +1655,7 @@ commented out until "*** No rule to make target '.../libadios2pio-nm-lib.a'" iss
     <mpirun mpilib="default">
       <executable>mpirun</executable>
       <arguments>
-        <arg name="binding"> --bind-to threads</arg>
+        <arg name="binding"> --bind-to core</arg>
       </arguments>
     </mpirun>
     <module_system type="none"/>
